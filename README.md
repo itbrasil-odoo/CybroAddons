@@ -17,7 +17,11 @@ CybroOdoo/CybroAddons filtered modules
 
 [//]: # (addons)
 
-This part will be replaced when running the oca-gen-addons-table script from OCA/maintainer-tools.
+Available addons
+----------------
+addon | version | maintainers | summary
+--- | --- | --- | ---
+[auto_database_backup](auto_database_backup/) | 17.0.6.0.2 |  | Odoo Database Backup, Automatic Backup, Database Backup, Automatic Backup,Database auto-backup, odoo backupgoogle drive, dropbox, nextcloud, amazon S3, onedrive or remote server, Odoo17, Backup, Database, Odoo Apps
 
 [//]: # (end addons)
 
