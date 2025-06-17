@@ -18,6 +18,9 @@ exclude: |
   /build/|/dist/|
   # Ignore test files in addons
   /tests/samples/.*|
+  # Ignore problematic files and folders
+  # ^auto_database_backup/.*|
+  ^login_as_any_user/static/src/js/.*\.js$|
   # You don't usually want a bot to modify your legal texts
   (LICENSE.*|COPYING.*)
 default_language_version:

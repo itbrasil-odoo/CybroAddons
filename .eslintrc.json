@@ -1,0 +1,20 @@
+{
+  "env": {
+    "browser": true,
+    "node": true,
+    "es6": true
+  },
+  "parserOptions": {
+    "ecmaVersion": 2015,
+    "sourceType": "module"
+  },
+  "globals": {
+    "odoo": true,
+    "module": true,
+    "require": true,
+    "_": true
+  },
+  "rules": {
+    "eqeqeq": "warn"
+  }
+}
