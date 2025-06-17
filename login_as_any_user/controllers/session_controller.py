@@ -28,11 +28,11 @@ _logger = logging.getLogger(__name__)
 
 
 class SessionController(http.Controller):
-    """Controller para fornecer informações de sessão ao cliente"""
+    """Controller to provide session information to the client"""
 
     @http.route("/web/session/check_impersonation", type="json", auth="user")
     def check_impersonation(self):
-        """Verifica se a sessão atual é impersonada e retorna informações"""
+        """Checks if the current session is impersonated and returns information"""
         session = request.session
         result = {"is_impersonated": False}
 
@@ -45,9 +45,9 @@ class SessionController(http.Controller):
             if hasattr(session, "session_timeout"):
                 result["session_timeout"] = session.session_timeout
 
-                # Verificar se expirou
+                # Check if session expired
                 try:
-                    # Converter string para datetime se necessário
+                    # Convert string to datetime if necessary
                     if isinstance(session.session_timeout, str):
                         timeout = datetime.datetime.fromisoformat(
                             session.session_timeout
