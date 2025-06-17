@@ -20,6 +20,7 @@
 #
 #############################################################################
 import logging
+
 import odoo
 from odoo import fields, http
 from odoo.http import request
@@ -65,7 +66,9 @@ class UserSwitch(http.Controller):
         pre_user = request.env["res.users"].sudo().browse(pre_uid)
 
         # Store switch log ID before clearing session
-        switch_log_id = session.switch_log_id if hasattr(session, "switch_log_id") else False
+        switch_log_id = (
+            session.switch_log_id if hasattr(session, "switch_log_id") else False
+        )
 
         # If user exists, switch back without permission checks
         if pre_user and pre_user.exists():
@@ -89,7 +92,8 @@ class UserSwitch(http.Controller):
             session.previous_user = None
 
             # Create a fresh cursor for authentication to avoid permission issues
-            request.env.cr.commit()  # Commit any pending changes before creating a new cursor
+            # Commit any pending changes before creating a new cursor
+            request.env.cr.commit()
 
             # Use a completely different approach to bypass authentication issues
             try:
@@ -107,12 +111,20 @@ class UserSwitch(http.Controller):
                         request.session.login = pre_login
 
                         # Update environment with new user
-                        request.env = odoo.api.Environment(request.env.cr, pre_uid, request.env.context)
+                        request.env = odoo.api.Environment(
+                            request.env.cr, pre_uid, request.env.context
+                        )
 
                         # Force redirect to home page
-                        return {"type": "ir.actions.act_url", "url": "/?nocache=" + str(fields.Datetime.now()), "target": "self"}
+                        return {
+                            "type": "ir.actions.act_url",
+                            "url": "/?nocache=" + str(fields.Datetime.now()),
+                            "target": "self",
+                        }
                     else:
-                        _logger.error("Could not find password hash for user %s", pre_uid)
+                        _logger.error(
+                            "Could not find password hash for user %s", pre_uid
+                        )
                         return False
                 finally:
                     cr.close()
