@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #############################################################################
 #
 #    Cybrosys Technologies Pvt. Ltd.
@@ -20,32 +19,32 @@
 #
 #############################################################################
 {
-    'name': 'Login As Any User',
-    'version': '16.0.1.0.0',
-    'category': 'Extra Tools',
-    'summary': 'Admin can log in as any user',
-    'description': 'The "Login As Any User" module allows administrators to '
-                   'switch to any user account without the need for '
-                   'passwords or other authentication.',
-    'author': 'Cybrosys Techno Solution',
-    'maintainer': 'Cybrosys Techno Solution',
-    'company': 'Cybrosys Techno Solutions',
-    'website': 'https://www.cybrosys.com',
-    'depends': ['base'],
-    'data': [
-        'security/ir.model.access.csv',
-        'wizards/user_selection_views.xml'
+    "name": "Login As Any User",
+    "version": "16.0.2.0.0",
+    "category": "Extra Tools",
+    "summary": "Admin can log in as any user - Enhanced Security",
+    "author": "Cybrosys Techno Solution, IT Brasil",
+    "maintainer": "Cybrosys Techno Solution",
+    "company": "Cybrosys Techno Solutions",
+    "website": "https://www.cybrosys.com",
+    "depends": ["base"],
+    "data": [
+        "security/security.xml",
+        "security/ir.model.access.csv",
+        "views/login_switch_log_views.xml",
+        "wizards/user_selection_views.xml",
     ],
-    'assets': {
-        'web.assets_backend': [
-            'login_as_any_user/static/src/js/systray_button.js',
-            'login_as_any_user/static/src/xml/systray_button_templates.xml',
-        ]},
-    'images': [
-        'static/description/banner.png'
-    ],
-    'license': 'LGPL-3',
-    'installable': True,
-    'auto-install': False,
-    'application': False,
+    "assets": {
+        "web.assets_backend": [
+            "login_as_any_user/static/src/js/systray_button.js",
+            "login_as_any_user/static/src/js/impersonation_banner.js",
+            "login_as_any_user/static/src/xml/systray_button_templates.xml",
+            "login_as_any_user/static/src/xml/impersonation_banner.xml",
+        ]
+    },
+    "images": ["static/description/banner.png"],
+    "license": "LGPL-3",
+    "installable": True,
+    "auto-install": False,
+    "application": False,
 }

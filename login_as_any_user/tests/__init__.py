@@ -1,10 +1,9 @@
-"""class inherited in groups"""
 #############################################################################
 #
 #    Cybrosys Technologies Pvt. Ltd.
 #
 #    Copyright (C) 2023-TODAY Cybrosys Technologies(<https://www.cybrosys.com>)
-#    Author: Mruthul Raj (<https://www.cybrosys.com>)
+#    Author: Cybrosys Techno Solutions (<https://www.cybrosys.com>)
 #
 #    You can modify it under the terms of the GNU LESSER
 #    GENERAL PUBLIC LICENSE (LGPL v3), Version 3.
@@ -19,13 +18,5 @@
 #    If not, see <http://www.gnu.org/licenses/>.
 #
 #############################################################################
-from odoo import models
 
-
-class ResGroups(models.Model):
-    """class to inherit a new field to res groups"""
-
-    _inherit = "res.groups"
-
-    # Removido o campo user_id que estava causando um erro de modelagem
-    # Não podemos ter um Many2one de um modelo permanente para um TransientModel
+from . import test_user_switch

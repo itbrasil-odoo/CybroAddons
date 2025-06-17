@@ -5,16 +5,43 @@
         <field name="name">user.selection.view.form</field>
         <field name="model">user.selection</field>
         <field name="arch" type="xml">
-            <form string="Select User">
+            <form string="Switch User">
+                <div class="alert alert-warning" role="alert">
+                    <h3 style="color: #9B4F0F;">Attention: Security</h3>
+                    <p
+                    >You are about to log in as another user. This action will be recorded for audit purposes.</p>
+                    <p>Please provide a valid reason for this action.</p>
+                </div>
                 <group>
-                    <field name="user_id"/>
+                    <group>
+                        <field
+                            name="user_id"
+                            options="{'no_create': True, 'no_open': True}"
+                        />
+                        <field name="session_timeout" required="1" />
+                    </group>
+                    <group>
+                        <field
+                            name="reason"
+                            required="1"
+                            placeholder="Explain why you need to log in as this user..."
+                        />
+                    </group>
                 </group>
-                <field name="access_ids"/>
+                <field name="access_ids">
+                    <tree>
+                        <field name="name" />
+                        <field name="category_id" />
+                    </tree>
+                </field>
                 <footer>
-                    <button name="action_switch" string="switch user"
-                            type="object" class="btn-primary"/>
-                    <button string="cancel" special="cancel"
-                            class="btn-secondary"/>
+                    <button
+                        name="action_switch"
+                        string="Confirm User Switch"
+                        type="object"
+                        class="btn-primary"
+                    />
+                    <button string="Cancel" special="cancel" class="btn-secondary" />
                 </footer>
             </form>
         </field>

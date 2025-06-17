@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <!-- Form view for the user switch log -->
+    <record id="login_user_switch_log_form_view" model="ir.ui.view">
+        <field name="name">login.user.switch.log.form</field>
+        <field name="model">login.user.switch.log</field>
+        <field name="arch" type="xml">
+            <form string="Login Switch Log" create="false" edit="false">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="admin_user_id" />
+                            <field name="switched_to_user_id" />
+                            <field name="switch_date" />
+                            <field name="switch_back_date" />
+                        </group>
+                        <group>
+                            <field name="ip_address" />
+                            <field name="duration" widget="float_time" />
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Notes">
+                            <field name="note" />
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Tree view for the user switch log -->
+    <record id="login_user_switch_log_tree_view" model="ir.ui.view">
+        <field name="name">login.user.switch.log.tree</field>
+        <field name="model">login.user.switch.log</field>
+        <field name="arch" type="xml">
+            <tree create="false" edit="false" delete="false">
+                <field name="admin_user_id" />
+                <field name="switched_to_user_id" />
+                <field name="switch_date" />
+                <field name="switch_back_date" />
+                <field name="duration" widget="float_time" />
+                <field name="ip_address" />
+            </tree>
+        </field>
+    </record>
+
+    <!-- Search view for the user switch log -->
+    <record id="login_user_switch_log_search_view" model="ir.ui.view">
+        <field name="name">login.user.switch.log.search</field>
+        <field name="model">login.user.switch.log</field>
+        <field name="arch" type="xml">
+            <search string="Search Login Switch Logs">
+                <field name="admin_user_id" />
+                <field name="switched_to_user_id" />
+                <field name="ip_address" />
+                <filter
+                    string="Today"
+                    name="today"
+                    domain="[('switch_date','&gt;=',context_today().strftime('%Y-%m-%d'))]"
+                />
+                <filter
+                    string="This Week"
+                    name="this_week"
+                    domain="[('switch_date','&gt;=',((context_today()-datetime.timedelta(days=7)).strftime('%Y-%m-%d')))]"
+                />
+                <filter
+                    string="Active Sessions"
+                    name="active_sessions"
+                    domain="[('switch_back_date','=',False)]"
+                />
+                <group expand="0" string="Group By">
+                    <filter
+                        string="Admin User"
+                        name="admin_user"
+                        context="{'group_by':'admin_user_id'}"
+                    />
+                    <filter
+                        string="Target User"
+                        name="target_user"
+                        context="{'group_by':'switched_to_user_id'}"
+                    />
+                    <filter
+                        string="Date"
+                        name="date"
+                        context="{'group_by':'switch_date'}"
+                    />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Ação para acessar logs de troca -->
+    <record id="action_login_user_switch_log" model="ir.actions.act_window">
+        <field name="name">User Switch Logs</field>
+        <field name="res_model">login.user.switch.log</field>
+        <field name="view_mode">tree,form</field>
+        <field name="search_view_id" ref="login_user_switch_log_search_view" />
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No user switch records found
+            </p>
+            <p>
+                This record is created automatically when an administrator switches users.
+            </p>
+        </field>
+    </record>
+
+    <!-- Menu para acessar os logs -->
+    <menuitem
+        id="menu_login_user_switch_log"
+        name="User Switch Logs"
+        action="action_login_user_switch_log"
+        parent="base.menu_administration"
+        groups="login_as_any_user.group_login_as_any_user"
+        sequence="100"
+    />
+</odoo>

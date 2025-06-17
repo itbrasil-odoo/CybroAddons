@@ -5,8 +5,12 @@
             <label class="user" title="Switch User">
                 <div class="icon_div">
                     <div class="toggle-icon" role="button">
-                        <i id="switch_user" class="fa fa-user fa-lg " role="img"
-                           aria-label="Switch User"/>
+                        <i
+                            id="switch_user"
+                            class="fa fa-user fa-lg "
+                            role="img"
+                            aria-label="Switch User"
+                        />
                     </div>
                 </div>
             </label>

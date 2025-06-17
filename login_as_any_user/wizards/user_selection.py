@@ -1,5 +1,4 @@
 """selection wizard for switching user"""
-# -*- coding: utf-8 -*-
 #############################################################################
 #
 #    Cybrosys Technologies Pvt. Ltd.
@@ -20,52 +19,95 @@
 #    If not, see <http://www.gnu.org/licenses/>.
 #
 #############################################################################
-from odoo import api, fields, models
+from odoo import _, api, fields, models
+from odoo.exceptions import AccessError
 from odoo.http import request
 
 
-class UserSelection(models.Model):
+class UserSelection(models.TransientModel):
     """
-        class for a wizard for users selection
-        _onchange_user_id:
-            function to get corresponding user group
-        action_switch:
-            function for switching the user
+    class for a wizard for users selection
+    _onchange_user_id:
+        function to get corresponding user group
+    action_switch:
+        function for switching the user
     """
-    _name = 'user.selection'
-    _description = 'user selection'
 
-    user_id = fields.Many2one('res.users', string="User", required=True,
-                              help="Select the user here",
-                              domain=lambda self: [
-                                  ('id', '!=', self.env.user.id)])
-    access_ids = fields.One2many('res.groups', 'user_id', help="User groups",
-                                 string="Group", readonly=True)
+    _name = "user.selection"
+    _description = "User Selection for Switching"
 
-    @api.onchange('user_id')
-    def _onchange_user_id(self):
+    user_id = fields.Many2one(
+        "res.users",
+        string="User",
+        required=True,
+        help="Select the user here",
+        domain=lambda self: [("id", "!=", self.env.user.id), ("login", "!=", "admin")],
+    )
+    access_ids = fields.Many2many(
+        "res.groups",
+        string="Groups",
+        readonly=True,
+        compute="_compute_access_ids",
+        help="User groups",
+    )
+    reason = fields.Text(
+        string="Reason for Switch", help="Explain why you need to switch to this user"
+    )
+    session_timeout = fields.Integer(
+        string="Session Timeout (minutes)",
+        default=60,
+        help="Session will automatically expire after this time",
+    )
+
+    @api.depends("user_id")
+    def _compute_access_ids(self):
         """
-            Summary:
-                change function to get users access group
+        Summary:
+            Compute function to get users access groups
         """
-        self.access_ids = self.user_id.groups_id
+        for record in self:
+            if record.user_id:
+                record.access_ids = record.user_id.groups_id
+            else:
+                record.access_ids = [(5, 0, 0)]
 
     def action_switch(self):
         """
         Summary:
-            function for switching the user
+            function for switching the user with enhanced security
         Return:
             Main login page after logged in
         """
         self.ensure_one()
-        session = request.session
-        session.update({
-            'previous_user': self.env.user.id,
-        })
-        session.authenticate_without_password(self.env.cr.dbname,
-                                              self.user_id.login, self.env)
-        return {
-            'type': 'ir.actions.act_url',
-            'url': '/',
-            'target': 'self'
+
+        # Check permission
+        if not self.env.user.has_group("login_as_any_user.group_login_as_any_user"):
+            raise AccessError(_("You don't have permission to switch users."))
+
+        # Register audit log
+        ip_addr = request.httprequest.environ.get("REMOTE_ADDR", "unknown")
+        log_vals = {
+            "admin_user_id": self.env.user.id,
+            "switched_to_user_id": self.user_id.id,
+            "ip_address": ip_addr,
+            "switch_date": fields.Datetime.now(),
+            "note": self.reason or "",
         }
+        log_id = self.env["login.user.switch.log"].sudo().create(log_vals)
+
+        session = request.session
+        session.update(
+            {
+                "previous_user": self.env.user.id,
+                "switch_log_id": log_id.id,
+                "is_impersonated": True,
+                "impersonated_by": self.env.user.name,
+                "session_timeout": fields.Datetime.now()
+                + fields.timedelta(minutes=self.session_timeout or 60),
+            }
+        )
+
+        session.authenticate_without_password(
+            self.env.cr.dbname, self.user_id.login, self.env
+        )
+        return {"type": "ir.actions.act_url", "url": "/", "target": "self"}

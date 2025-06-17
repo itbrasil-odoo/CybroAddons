@@ -1,2 +1,4 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_user_selection_user,access.user.selection.user,model_user_selection,base.group_user,1,1,1,1
+access_user_selection_admin,access.user.selection.admin,model_user_selection,login_as_any_user.group_login_as_any_user,1,1,1,1
+access_login_user_switch_log,access.login.user.switch.log,model_login_user_switch_log,login_as_any_user.group_login_as_any_user,1,1,1,0
+access_login_user_switch_log_system,access.login.user.switch.log.system,model_login_user_switch_log,base.group_system,1,0,0,0
