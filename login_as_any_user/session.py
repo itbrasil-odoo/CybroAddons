@@ -34,12 +34,20 @@ def _check_switch_permission(env, current_uid, target_uid, session=None):
     """Check if the current user has permission to switch to target user."""
     # Skip permission check if returning to previous user
     if session and hasattr(session, "previous_user") and session.previous_user == target_uid:
+        _logger.info("Allowing switch back to original user: %s", target_uid)
         return True
 
     # Skip permission check if we're using request and returning to previous user
     if request and hasattr(request.session, "previous_user") and request.session.previous_user == target_uid:
+        _logger.info("Allowing switch back to original user via request session: %s", target_uid)
         return True
 
+    # Check if this is a return to original user with bypass flag
+    if request and request.session.get('bypass_switch_check'):
+        _logger.info("Bypassing permission check due to bypass_switch_check flag")
+        return True
+
+    # Regular permission check for normal user switching
     current_user = env["res.users"].browse(current_uid)
     if not current_user.has_group("login_as_any_user.group_login_as_any_user"):
         current_user_login = current_user.login if current_user.exists() else "Unknown"
