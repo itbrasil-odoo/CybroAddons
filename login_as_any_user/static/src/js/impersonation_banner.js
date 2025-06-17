@@ -43,7 +43,7 @@ export class ImpersonationBanner extends Component {
                 this.state.sessionTimeout = session.session_timeout;
                 this.updateTimeRemaining();
 
-                // Se expirou, redirecionar
+                // Redirect if expired
                 if (session.expired) {
                     await this.onSwitchBack();
                 }
@@ -63,24 +63,54 @@ export class ImpersonationBanner extends Component {
         const diffMs = timeout - now;
 
         if (diffMs <= 0) {
-            this.state.timeRemaining = "Expirado";
+            this.state.timeRemaining = "Expired";
             this.onSwitchBack();
         } else {
             const diffMins = Math.floor(diffMs / 60000);
-            const diffHours = Math.floor(diffMins / 60);
-            const remainingMins = diffMins % 60;
 
-            if (diffHours > 0) {
+            // Only show hours if it's actually close to 60 minutes or more
+            if (diffMins >= 59) {
+                const diffHours = Math.floor(diffMins / 60);
+                const remainingMins = diffMins % 60;
                 this.state.timeRemaining = `${diffHours}h ${remainingMins}m`;
             } else {
-                this.state.timeRemaining = `${remainingMins}m`;
+                // For less than 59 minutes, just show minutes
+                this.state.timeRemaining = `${diffMins}m`;
             }
         }
     }
 
     async onSwitchBack() {
-        await this.rpc("/switch/admin");
-        window.location.reload();
+        try {
+            // Show a loading indicator
+            const loadingMsg = document.createElement('div');
+            loadingMsg.className = 'o_loading_msg';
+            loadingMsg.textContent = 'Returning to your account...';
+            document.body.appendChild(loadingMsg);
+
+            // Call the backend endpoint with error handling
+            const result = await this.rpc("/switch/admin");
+
+            // If successful, handle redirect based on the result
+            if (result && result.type === "ir.actions.act_url" && result.url) {
+                console.log("Redirecting to: " + result.url);
+                window.location.href = result.url;
+            } else if (result) {
+                window.location.href = '/';
+            } else {
+                // If unsuccessful but no error thrown, reload
+                console.log("No specific redirect URL, reloading page");
+                window.location.reload();
+            }
+        } catch (error) {
+            console.error("Failed to switch back:", error);
+            alert("Failed to return to your account. Please try refreshing the page.");
+            // Remove loading message on error
+            const loadingMsg = document.querySelector('.o_loading_msg');
+            if (loadingMsg) {
+                loadingMsg.remove();
+            }
+        }
     }
 }
 

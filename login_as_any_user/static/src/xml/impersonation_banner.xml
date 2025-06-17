@@ -8,17 +8,17 @@
         >
             <i class="fa fa-exclamation-triangle me-2" aria-hidden="true" />
             <span>
-                Você está logado como <strong
+                You are logged in as <strong
                     t-out="state.userName"
-                /> (impersonado por <t t-out="state.adminName" />)
+                /> (impersonated by <t t-out="state.adminName" />)
             </span>
             <button class="btn btn-sm btn-warning ms-2" t-on-click="onSwitchBack">
                 <i class="fa fa-sign-out me-1" aria-hidden="true" />
-                Voltar para sua conta
+                Return to your account
             </button>
             <div class="float-end" t-if="state.timeRemaining">
                 <i class="fa fa-clock-o me-1" aria-hidden="true" />
-                <span>Tempo restante: <t t-out="state.timeRemaining" /></span>
+                <span>Time remaining: <t t-out="state.timeRemaining" /></span>
             </div>
         </div>
     </t>
