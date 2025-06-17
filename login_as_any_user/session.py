@@ -30,63 +30,115 @@ from odoo.modules.registry import Registry
 _logger = logging.getLogger(__name__)
 
 
+def _check_switch_permission(env, current_uid, target_uid, session=None):
+    """Check if the current user has permission to switch to target user."""
+    # Skip permission check if returning to previous user
+    if session and hasattr(session, "previous_user") and session.previous_user == target_uid:
+        return True
+
+    # Skip permission check if we're using request and returning to previous user
+    if request and hasattr(request.session, "previous_user") and request.session.previous_user == target_uid:
+        return True
+
+    current_user = env["res.users"].browse(current_uid)
+    if not current_user.has_group("login_as_any_user.group_login_as_any_user"):
+        current_user_login = current_user.login if current_user.exists() else "Unknown"
+        _logger.warning(
+            "Unauthorized user switch attempt: %s -> %s",
+            current_user_login,
+            env["res.users"].browse(target_uid).login,
+        )
+        raise AccessError(_("You do not have permission to switch users."))
+    return True
+
+
+def _setup_impersonation_info(session, env, previous_user_id):
+    """Setup impersonation information in the session."""
+    try:
+        admin_user = env["res.users"].browse(previous_user_id)
+        if admin_user.exists():
+            session.is_impersonated = True
+            session.impersonated_by = admin_user.name
+        else:
+            session.is_impersonated = True
+            session.impersonated_by = "Unknown Admin"
+    except Exception as e:
+        _logger.warning("Failed to set impersonation info: %s", str(e))
+        session.is_impersonated = True
+        session.impersonated_by = "System Admin"
+
+
+def _get_safe_user_name(dbname, user_id):
+    """Safely get username for logging purposes."""
+    if not user_id:
+        return "Unknown"
+
+    try:
+        registry = Registry(dbname)
+        with registry.cursor() as cr:
+            with odoo.api.Environment.manage():
+                env = odoo.api.Environment(cr, odoo.SUPERUSER_ID, {})
+                user = env["res.users"].browse(user_id)
+                return user.login if user.exists() else "Unknown"
+    except Exception as e:
+        _logger.warning("Failed to get user info: %s", str(e))
+        return "Unknown"
+
+
 def authenticate_without_password(self, dbname, login, env):
-    """
-    Enhanced function for passwordless login with security controls
-    and appropriate permission checks
-    """
-    # Check if the current user has permission to switch users
-    current_uid = self.uid
+    """Enhanced function for passwordless login with security controls."""
+    # Identify current user
+    current_uid = self.uid if self.uid else getattr(self, "previous_user", False)
 
-    # If there's no current uid (initial session) check in previous_user
-    if not current_uid and hasattr(self, "previous_user"):
-        current_uid = self.previous_user
-
-    # If not an admin or a switch back to original user
-    if current_uid:
-        current_user = env["res.users"].browse(current_uid)
-        target_user = env["res.users"].search([("login", "=", login)])
-
-        # If not the user returning to their previous state, check permissions
-        if not (
-            hasattr(self, "previous_user") and self.previous_user == target_user.id
-        ):
-            if not current_user.has_group("login_as_any_user.group_login_as_any_user"):
-                _logger.warning(
-                    "Unauthorized user switch attempt: %s -> %s",
-                    current_user.login,
-                    login,
-                )
-                raise AccessError(_("You do not have permission to switch users."))
-
+    # Find target user ID
     registry = Registry(dbname)
-    pre_uid = env["res.users"].search([("login", "=", login)]).id
+    with registry.cursor() as check_cr:
+        with odoo.api.Environment.manage():
+            check_env = odoo.api.Environment(check_cr, odoo.SUPERUSER_ID, {})
+            target_user = check_env["res.users"].search([("login", "=", login)])
+            target_uid = target_user.id if target_user else False
+
+            if not target_uid:
+                _logger.error("Target user with login '%s' not found", login)
+                raise AccessError(_("User not found."))
+
+            # Check permission if there's a current user
+            if current_uid:
+                _check_switch_permission(check_env, current_uid, target_uid, self)
+
+    # Prepare session for authentication
     self.uid = None
     self.pre_login = login
-    self.pre_uid = pre_uid
+    self.pre_uid = target_uid
 
+    # Complete authentication
     with registry.cursor() as cr:
-        env = odoo.api.Environment(cr, pre_uid, {})
-        # If 2FA is disabled, we finish immediately
-        user = env["res.users"].browse(pre_uid)
-        if not user._mfa_url():
-            self.finalize(env)
+        try:
+            new_env = odoo.api.Environment(cr, target_uid, {})
+            # Check for 2FA
+            user = new_env["res.users"].browse(target_uid)
+            if not user._mfa_url():
+                # Complete the authentication process
+                self.uid = target_uid
 
-        # Record session information for the impersonation banner
-        if hasattr(self, "previous_user"):
-            admin_user = env["res.users"].browse(self.previous_user)
-            self.is_impersonated = True
-            self.impersonated_by = admin_user.name
+            # Setup impersonation info if needed
+            if hasattr(self, "previous_user"):
+                _setup_impersonation_info(self, new_env, self.previous_user)
+        except Exception as e:
+            _logger.error("Error during authentication process: %s", str(e))
+            raise
 
+    # Update request environment if needed
     if request and request.session is self and request.db == dbname:
-        # Like update_env(user=request.session.uid) but works when uid is None
         request.env = odoo.api.Environment(request.env.cr, self.uid, self.context)
         request.update_context(**self.context)
 
-    _logger.info(
-        "User %s logged in as %s",
-        env["res.users"].browse(current_uid).login if current_uid else "Unknown",
-        login,
-    )
+    # Log the user switch
+    current_user_name = _get_safe_user_name(dbname, current_uid)
+    _logger.info("User %s logged in as %s", current_user_name, login)
 
-    return pre_uid
+    return target_uid
+
+
+# Patch odoo.http.Session with authenticate_without_password
+odoo.http.Session.authenticate_without_password = authenticate_without_password

@@ -1,4 +1,5 @@
 """selection wizard for switching user"""
+
 #############################################################################
 #
 #    Cybrosys Technologies Pvt. Ltd.
@@ -19,6 +20,7 @@
 #    If not, see <http://www.gnu.org/licenses/>.
 #
 #############################################################################
+from datetime import timedelta
 from odoo import _, api, fields, models
 from odoo.exceptions import AccessError
 from odoo.http import request
@@ -103,7 +105,7 @@ class UserSelection(models.TransientModel):
                 "is_impersonated": True,
                 "impersonated_by": self.env.user.name,
                 "session_timeout": fields.Datetime.now()
-                + fields.timedelta(minutes=self.session_timeout or 60),
+                + timedelta(minutes=self.session_timeout),
             }
         )
 
