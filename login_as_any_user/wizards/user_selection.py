@@ -38,12 +38,33 @@ class UserSelection(models.TransientModel):
     _name = "user.selection"
     _description = "User Selection for Switching"
 
+    def _available_user_ids(self):
+        """
+        Summary:
+            Function to get the list of available users for selection
+        Return:
+            List of user ids excluding the current user and admin
+        """
+        return (
+            self.env["res.users"]
+            .search(
+                [
+                    ("id", "!=", self.env.user.id),
+                    ("login", "!=", "admin"),
+                    ("active", "=", True),
+                    ("share", "=", False),
+                ]
+            )
+            .ids
+        )
+
     user_id = fields.Many2one(
         "res.users",
         string="User",
         required=True,
         help="Select the user here",
-        domain=lambda self: [("id", "!=", self.env.user.id), ("login", "!=", "admin")],
+        domain=lambda self: [("id", "in", self._available_user_ids())],
+        default=lambda self: self.env.user,
     )
     access_ids = fields.Many2many(
         "res.groups",
